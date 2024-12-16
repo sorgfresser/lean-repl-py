@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lean-repl-py"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python application to interact with the Lean REPL."
 authors = ["Simon Sorg <simonsorg13@gmail.com>"]
 license = "MIT"
