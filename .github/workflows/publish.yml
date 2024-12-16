@@ -29,10 +29,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root
 
-      - name: Build the wheel
-        run: poetry build
-
       - name: Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
-        run: poetry publish -v --build
+        run: poetry publish -vv --build
