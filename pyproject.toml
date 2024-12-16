@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "lean-repl-py"
+version = "0.1.0"
+description = "A Python application to interact with the Lean REPL."
+authors = ["Simon Sorg <simonsorg13@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "lean_repl_py" }]
+include = [
+    "repl/REPL/**/*",
+    "repl/*"
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+ruff = "^0.8.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
