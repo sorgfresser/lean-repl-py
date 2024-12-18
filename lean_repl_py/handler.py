@@ -32,20 +32,38 @@ class LeanREPLMessage(BaseModel):
 
 
 class LeanREPLHandler:
-    def __init__(self):
-        # Path to the Lean REPL executable
-        self.lean_repl_path = Path(__file__).parent.parent / "repl"
+    def __init__(self, project_path: Optional[Path] = None):
+        """Initialize the Lean REPL handler.
 
+        :param project_path: An optional path for a Lean project directory, containing the desired Lean environment.
+            If set, will run repl using `lake env repl` from the project directory.
+        """
+        # Path to the Lean REPL submodule
+        self.lean_repl_path = Path(__file__).parent.parent / "repl"
         # Start the Lean REPL subprocess with pipes for stdin, stdout, and stderr
-        self.process = subprocess.Popen(
-            ["lake", "exe", "repl"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,  # Handle input/output as text (string)
-            bufsize=1,
-            cwd=self.lean_repl_path,
-        )
+        if project_path is None:
+            self.process = subprocess.Popen(
+                ["lake", "exe", "repl"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,  # Handle input/output as text (string)
+                bufsize=1,
+                cwd=self.lean_repl_path,
+            )
+        else:
+            # Need to ensure repl is built - this is a bit hacky, as it might take a second to detect if already built
+            subprocess.check_call(["lake", "build"], cwd=self.lean_repl_path)
+            repl_bin_path = self.lean_repl_path / ".lake" / "build" / "bin" / "repl"
+            self.process = subprocess.Popen(
+                ["lake", "env", str(repl_bin_path.absolute())],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,  # Handle input/output as text (string)
+                bufsize=1,
+                cwd=project_path,
+            )
         self._env = None
 
     @property
