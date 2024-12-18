@@ -1,21 +1,34 @@
 import subprocess
 import json
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Optional, Dict, Union, Tuple
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, Union, Tuple, Literal
 
 # Max lines a single repl output is expected to be, will raise if longer than this
 REPL_MAX_OUTPUT_LINES = 10000
 
 
-@dataclass
-class LeanREPLEnvironment:
+class LeanREPLPos(BaseModel):
+    line: int
+    column: int
+
+
+class LeanREPLEnvironment(BaseModel):
     env_index: int
 
 
-@dataclass
-class LeanREPLProofState:
-    proof_state_index: int
+class LeanREPLProofState(BaseModel):
+    proof_state: int = Field(alias="proofState")
+    goal: str
+    pos: LeanREPLPos
+    end_pos: LeanREPLPos = Field(alias="endPos")
+
+
+class LeanREPLMessage(BaseModel):
+    data: str
+    pos: LeanREPLPos
+    end_pos: Optional[LeanREPLPos] = Field(alias="endPos")
+    severity: Literal["error", "warning", "info"]
 
 
 class LeanREPLHandler:
@@ -51,10 +64,8 @@ class LeanREPLHandler:
             {"path": str(path.absolute()), "allTactics": all_tactics}
         )
 
-    def send_tactic(self, tactic: str, proof_state: LeanREPLProofState) -> None:
-        return self._send_json(
-            {"tactic": tactic, "proofState": proof_state.proof_state_index}
-        )
+    def send_tactic(self, tactic: str, proof_state_idx: int) -> None:
+        return self._send_json({"tactic": tactic, "proofState": proof_state_idx})
 
     def send_json_str(self, data: str) -> None:
         return self._send_json(json.loads(data))
@@ -63,7 +74,7 @@ class LeanREPLHandler:
         """Send a JSON object to the Lean REPL."""
         if self.env is not None:
             data["env"] = self.env
-        json_data = json.dumps(data)
+        json_data = json.dumps(data, ensure_ascii=False)
         self.process.stdin.write(json_data + "\n\n")
         self.process.stdin.flush()
 
@@ -85,14 +96,41 @@ class LeanREPLHandler:
             i += 1
         return output
 
-    def receive_json(self) -> Optional[Tuple[Dict[str, str], LeanREPLEnvironment]]:
+    def _has_sorries(self, response: Dict[str, str]):
+        return "sorries" in response
+
+    def _parse_sorries(self, response: Dict[str, str]) -> None:
+        for idx, sorry in enumerate(response["sorries"]):
+            response["sorries"][idx] = LeanREPLProofState.model_validate(sorry)
+
+    def _has_messages(self, response: Dict[str, str]):
+        return "messages" in response
+
+    def _parse_messages(self, response: Dict[str, str]) -> None:
+        for idx, message in enumerate(response["messages"]):
+            response["messages"][idx] = LeanREPLMessage.model_validate(message)
+
+    def receive_json(
+        self,
+    ) -> Optional[Tuple[Dict[str, str], Optional[LeanREPLEnvironment]]]:
         """Read a JSON object from the Lean REPL."""
         output = self._get_output()
         try:
             response = json.loads(output)
-            env = response["env"]
-            del response["env"]
-            return response, LeanREPLEnvironment(env_index=int(env))
+            # Env is not send in tactic mode
+            if "env" in response:
+                env = response["env"]
+                del response["env"]
+            else:
+                env = None
+            # If we have sorries, we can return proof states
+            if self._has_sorries(response):
+                self._parse_sorries(response)
+            if self._has_messages(response):
+                self._parse_messages(response)
+            if env is not None:
+                return response, LeanREPLEnvironment(env_index=int(env))
+            return response, None
         except json.JSONDecodeError:
             return None
 
@@ -103,12 +141,12 @@ class LeanREPLHandler:
         return self.receive_json()
 
     def pickle_proof_state(
-        self, pickle_to: Path, proof_state: LeanREPLProofState
+        self, pickle_to: Path, proof_state_idx: int
     ) -> Optional[Dict[str, Union[str, int]]]:
         self._send_json(
             {
                 "pickleTo": str(pickle_to.absolute()),
-                "proofState": proof_state.proof_state_index,
+                "proofState": proof_state_idx,
             }
         )
         return self.receive_json()
@@ -128,56 +166,3 @@ class LeanREPLHandler:
 
     def __del__(self):
         self.close()
-
-
-def main():
-    handler = LeanREPLHandler()
-
-    try:
-        # Example of sending and receiving JSON continuously
-        while True:
-            # Prepare the JSON input
-            user_input = input("Enter a Lean repl line (or 'quit' to exit): ")
-            if user_input.strip().lower() == "quit":
-                break
-            elif user_input.strip().lower() == "unpickleenv":
-                user_input = input("Enter a filepath to unpickle from")
-                handler.unpickle_env(Path(user_input))
-            elif user_input.strip().lower() == "unpickleproofstate":
-                user_input = input("Enter a filepath to unpickle from")
-                handler.unpickle_proof_state(Path(user_input))
-            elif user_input.strip().lower() == "pickleenv":
-                user_input = input("Enter a filepath to pickle to: ")
-                user_input_2 = input("Enter an environment index to pickle: ")
-                print(
-                    handler.pickle_env(
-                        Path(user_input), LeanREPLEnvironment(int(user_input_2))
-                    )
-                )
-            elif user_input.strip().lower() == "pickleproofstate":
-                user_input = input("Enter a filepath to pickle to: ")
-                user_input_2 = input("Enter a proof state index to pickle: ")
-                print(
-                    handler.pickle_proof_state(
-                        Path(user_input), LeanREPLProofState(int(user_input_2))
-                    )
-                )
-            else:
-                # Send the JSON command
-                command = user_input
-                handler.send_json_str(command)
-
-                # Receive and print the response
-                response = handler.receive_json()
-                if response:
-                    print("Response:", response)
-                else:
-                    print("Invalid JSON response from Lean REPL.")
-
-    finally:
-        handler.close()
-        print("Lean REPL subprocess closed.")
-
-
-if __name__ == "__main__":
-    main()

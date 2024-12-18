@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from pathlib import Path
-from lean_repl_py import LeanREPLHandler, LeanREPLEnvironment, LeanREPLProofState
+from lean_repl_py import LeanREPLHandler, LeanREPLEnvironment
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def test_send_command(handler):
 
 
 def test_send_file(handler):
-    test_path = Path("../examples/test_file.lean")
+    test_path = Path("../samples/test_file.lean")
     handler.send_file(test_path)
     handler.process.stdin.write.assert_called_with(
         f'{{"path": "{str(test_path.absolute())}", "allTactics": true}}\n\n'
@@ -30,8 +30,7 @@ def test_send_file(handler):
 
 
 def test_send_tactic(handler):
-    proof_state = LeanREPLProofState(proof_state_index=1)
-    handler.send_tactic("intro", proof_state)
+    handler.send_tactic("intro", 1)
     handler.process.stdin.write.assert_called_with(
         '{"tactic": "intro", "proofState": 1}\n\n'
     )
