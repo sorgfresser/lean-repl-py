@@ -19,6 +19,10 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: List repository content
+        run: |
+          ls -R
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
