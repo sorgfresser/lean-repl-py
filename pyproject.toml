@@ -7,8 +7,8 @@ license = "MIT"
 readme = "README.md"
 packages = [{ include = "lean_repl_py" }]
 include = [
-    "repl/REPL/**/*",
-    "repl/*"
+    "./repl/REPL/**/*",
+    "./repl/*"
 ]
 
 [tool.poetry.dependencies]
