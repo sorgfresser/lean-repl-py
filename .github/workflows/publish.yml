@@ -26,12 +26,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Install Poetry
         uses: abatilo/actions-poetry@v3
         with:
-          poetry-version: 'main'
+          poetry-version: '1.8.5'
 
       - name: Install dependencies
         run: poetry install --no-root
