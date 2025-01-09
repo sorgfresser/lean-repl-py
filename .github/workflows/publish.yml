@@ -17,22 +17,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: 'recursive'
+
+      - name: List repository content
+        run: |
+          ls -R
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Install Poetry
         uses: abatilo/actions-poetry@v3
         with:
-          poetry-version: 'main'
+          poetry-version: '1.8.4'
 
       - name: Install dependencies
         run: poetry install --no-root
 
+      - name: Build package
+        run: poetry build
+
       - name: Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
-        run: poetry publish -vv --build
+        run: poetry publish -vv
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
