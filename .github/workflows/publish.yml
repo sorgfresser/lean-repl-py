@@ -39,10 +39,10 @@ jobs:
       - name: Build package
         run: poetry build
 
-      - name: Publish to PyPI
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
-        run: poetry publish -vv
+#      - name: Publish to PyPI
+#        env:
+#          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+#        run: poetry publish -vv
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
