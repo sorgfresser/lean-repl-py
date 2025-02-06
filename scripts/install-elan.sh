@@ -6,7 +6,7 @@ echo "::group::Elan Installation Output"
 
 set -o pipefail
 curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf |
-  sh -s -- -y --default-toolchain none
+  sh -s -- -y --default-toolchain stable
 rm -f elan-init
 
 echo "$HOME/.elan/bin" >>"$GITHUB_PATH"
