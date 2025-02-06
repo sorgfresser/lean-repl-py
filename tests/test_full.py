@@ -1,10 +1,11 @@
 from lean_repl_py import LeanREPLHandler, LeanREPLProofState
 import pytest
+from pathlib import Path
 
 
 @pytest.fixture
 def handler():
-    yield LeanREPLHandler()
+    yield LeanREPLHandler(Path(__file__).parent.parent / "repl")
 
 
 def test_send_command(handler):
