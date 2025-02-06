@@ -64,15 +64,20 @@ class LeanREPLHandler:
                 bufsize=1,
                 cwd=project_path,
             )
-        self._env = None
+        self._env: Optional[LeanREPLEnvironment] = None
 
     @property
     def env(self):
         return self._env
 
     @env.setter
-    def env(self, environment: LeanREPLEnvironment):
-        self._env = environment
+    def env(self, environment: Union[LeanREPLEnvironment, int]):
+        if isinstance(environment, LeanREPLEnvironment):
+            self._env = environment
+        elif isinstance(environment, int):
+            self._env = LeanREPLEnvironment(env_index=environment)
+        else:
+            raise ValueError("Environment must be a LeanREPLEnvironment object.")
 
     def send_command(self, command: str) -> None:
         return self._send_json({"cmd": command})
@@ -91,7 +96,7 @@ class LeanREPLHandler:
     def _send_json(self, data: Dict[str, Union[str, int]]) -> None:
         """Send a JSON object to the Lean REPL."""
         if self.env is not None:
-            data["env"] = self.env
+            data["env"] = self.env.env_index
         json_data = json.dumps(data, ensure_ascii=False)
         self.process.stdin.write(json_data + "\n\n")
         self.process.stdin.flush()
