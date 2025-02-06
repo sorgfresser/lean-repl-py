@@ -1,5 +1,6 @@
 #!/bin/bash
 # Blatantly copied from https://github.com/leanprover/lean-action/blob/main/scripts/install_elan.sh
+
 # Group logging using the ::group:: workflow command
 echo "::group::Elan Installation Output"
 
