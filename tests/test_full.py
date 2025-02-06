@@ -58,8 +58,3 @@ def test_prove_extended(handler):
     handler.send_tactic("exact hq", proof_state_idx)
     result_dict, env = handler.receive_json()
     assert len(result_dict["goals"]) == 0
-
-
-def test_something(handler):
-    handler.send_command("""import Aesop.RuleTac.Forward.Basic
-""")
