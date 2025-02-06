@@ -62,7 +62,7 @@ jobs:
       - name: install elan
         run: |
           : Install Elan
-          ${GITHUB_ACTION_PATH}/scripts/install_elan.sh
+          ./scripts/install_elan.sh
         shell: bash
 
       - name: Install dependencies
