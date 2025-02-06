@@ -1,15 +1,18 @@
-from lean_repl_py import LeanREPLHandler, LeanREPLEnvironment, LeanREPLProofState
+from lean_repl_py import LeanREPLHandler, LeanREPLProofState
 import pytest
+
 
 @pytest.fixture
 def handler():
     yield LeanREPLHandler()
+
 
 def test_send_command(handler):
     handler.send_command("def f := 2")
     result_dict, env = handler.receive_json()
     assert not result_dict
     assert env.env_index == 0
+
 
 def test_prove(handler):
     handler.send_command("theorem test : 1 = 1 := by sorry")
@@ -23,8 +26,11 @@ def test_prove(handler):
     result_dict, env = handler.receive_json()
     assert len(result_dict["goals"]) == 0
 
+
 def test_prove_extended(handler):
-    handler.send_command("theorem test_extended (p q : Prop) (hp : p) (hq : q) : p ∧ q := by sorry")
+    handler.send_command(
+        "theorem test_extended (p q : Prop) (hp : p) (hq : q) : p ∧ q := by sorry"
+    )
     result_dict, env = handler.receive_json()
     proof_state = result_dict["sorries"][0]
     assert isinstance(proof_state, LeanREPLProofState)
