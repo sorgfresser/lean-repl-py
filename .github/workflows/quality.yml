@@ -62,7 +62,7 @@ jobs:
       - name: install elan
         run: |
           : Install Elan
-          ./scripts/install_elan.sh
+          ./scripts/install-elan.sh
         shell: bash
 
       - name: Install dependencies
