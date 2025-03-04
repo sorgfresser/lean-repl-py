@@ -4,12 +4,14 @@ from .handler import (
     LeanREPLProofState,
     LeanREPLPos,
     LeanREPLMessage,
+    LeanREPLNextProofState,
 )
 
 __all__ = [
     "LeanREPLHandler",
     "LeanREPLEnvironment",
     "LeanREPLProofState",
+    "LeanREPLNextProofState",
     "LeanREPLPos",
     "LeanREPLMessage",
 ]

@@ -1,4 +1,4 @@
-from lean_repl_py import LeanREPLProofState
+from lean_repl_py import LeanREPLProofState, LeanREPLNextProofState
 
 
 def test_send_command(handler):
@@ -17,8 +17,9 @@ def test_prove(handler):
     assert proof_state.goal == "⊢ 1 = 1"
 
     handler.send_tactic("rfl", proof_state.proof_state)
-    result_dict, env = handler.receive_json()
-    assert len(result_dict["goals"]) == 0
+    result_proof_state, env = handler.receive_json()
+    assert isinstance(result_proof_state, LeanREPLNextProofState)
+    assert len(result_proof_state.goals) == 0
 
 
 def test_prove_extended(handler):
@@ -32,22 +33,23 @@ def test_prove_extended(handler):
     assert proof_state.goal == "p q : Prop\nhp : p\nhq : q\n⊢ p ∧ q"
 
     handler.send_tactic("constructor", proof_state.proof_state)
-    result_dict, env = handler.receive_json()
-
-    assert len(result_dict["goals"]) == 2
-    assert result_dict["goals"][0] == "case left\np q : Prop\nhp : p\nhq : q\n⊢ p"
-    assert result_dict["goals"][1] == "case right\np q : Prop\nhp : p\nhq : q\n⊢ q"
-    proof_state_idx = result_dict["proofState"]
+    result_proof_state, env = handler.receive_json()
+    assert isinstance(result_proof_state, LeanREPLNextProofState)
+    assert len(result_proof_state.goals) == 2
+    assert result_proof_state.goals[0] == "case left\np q : Prop\nhp : p\nhq : q\n⊢ p"
+    assert result_proof_state.goals[1] == "case right\np q : Prop\nhp : p\nhq : q\n⊢ q"
+    proof_state_idx = result_proof_state.proof_state
     assert proof_state_idx == 1
 
     handler.send_tactic("exact hp", proof_state_idx)
-    result_dict, env = handler.receive_json()
-
-    assert len(result_dict["goals"]) == 1
-    assert result_dict["goals"][0] == "case right\np q : Prop\nhp : p\nhq : q\n⊢ q"
-    proof_state_idx = result_dict["proofState"]
+    result_proof_state, env = handler.receive_json()
+    assert isinstance(result_proof_state, LeanREPLNextProofState)
+    assert len(result_proof_state.goals) == 1
+    assert result_proof_state.goals[0] == "case right\np q : Prop\nhp : p\nhq : q\n⊢ q"
+    proof_state_idx = result_proof_state.proof_state
     assert proof_state_idx == 2
 
     handler.send_tactic("exact hq", proof_state_idx)
-    result_dict, env = handler.receive_json()
-    assert len(result_dict["goals"]) == 0
+    result_proof_state, env = handler.receive_json()
+    assert isinstance(result_proof_state, LeanREPLNextProofState)
+    assert len(result_proof_state.goals) == 0

@@ -24,6 +24,11 @@ class LeanREPLProofState(BaseModel):
     end_pos: LeanREPLPos = Field(alias="endPos")
 
 
+class LeanREPLNextProofState(BaseModel):
+    proof_state: int = Field(alias="proofState")
+    goals: list[str]
+
+
 class LeanREPLMessage(BaseModel):
     data: str
     pos: LeanREPLPos
@@ -126,6 +131,9 @@ class LeanREPLHandler:
         for idx, sorry in enumerate(response["sorries"]):
             response["sorries"][idx] = LeanREPLProofState.model_validate(sorry)
 
+    def _is_next_proof_state(self, response: Dict[str, str]):
+        return "proofState" in response  # if response has top level proofState
+
     def _has_messages(self, response: Dict[str, str]):
         return "messages" in response
 
@@ -135,7 +143,12 @@ class LeanREPLHandler:
 
     def receive_json(
         self,
-    ) -> Optional[Tuple[Dict[str, str], Optional[LeanREPLEnvironment]]]:
+    ) -> Optional[
+        Tuple[
+            Union[Dict[str, Union[str, LeanREPLProofState]], LeanREPLNextProofState],
+            Optional[LeanREPLEnvironment],
+        ]
+    ]:
         """Read a JSON object from the Lean REPL."""
         output = self._get_output()
         try:
@@ -151,6 +164,8 @@ class LeanREPLHandler:
                 self._parse_sorries(response)
             if self._has_messages(response):
                 self._parse_messages(response)
+            if self._is_next_proof_state(response):
+                response = LeanREPLNextProofState.model_validate(response)
             if env is not None:
                 return response, LeanREPLEnvironment(env_index=int(env))
             return response, None
