@@ -76,8 +76,8 @@ class LeanREPLHandler:
         return self._env
 
     @env.setter
-    def env(self, environment: Union[LeanREPLEnvironment, int]):
-        if isinstance(environment, LeanREPLEnvironment):
+    def env(self, environment: Union[LeanREPLEnvironment, int, None]):
+        if isinstance(environment, LeanREPLEnvironment) or environment is None:
             self._env = environment
         elif isinstance(environment, int):
             self._env = LeanREPLEnvironment(env_index=environment)
