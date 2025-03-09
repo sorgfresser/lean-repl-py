@@ -1,8 +1,8 @@
 import subprocess
 import json
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Union, Tuple, Literal
+from pydantic import BaseModel, Field, model_validator
+from typing import Optional, Dict, Union, Tuple, Literal, Any
 
 # Max lines a single repl output is expected to be, will raise if longer than this
 REPL_MAX_OUTPUT_LINES = 10000
@@ -24,16 +24,24 @@ class LeanREPLProofState(BaseModel):
     end_pos: LeanREPLPos = Field(alias="endPos")
 
 
-class LeanREPLNextProofState(BaseModel):
-    proof_state: int = Field(alias="proofState")
-    goals: list[str]
-
-
 class LeanREPLMessage(BaseModel):
     data: str
     pos: LeanREPLPos
     end_pos: Optional[LeanREPLPos] = Field(alias="endPos")
     severity: Literal["error", "warning", "info"]
+
+
+class LeanREPLNextProofState(BaseModel):
+    proof_state: int = Field(alias="proofState")
+    goals: list[str]
+    messages: list[LeanREPLMessage]
+
+    @model_validator(mode="before")
+    @classmethod
+    def optional_messages(cls, value: Any) -> Any:
+        if "messages" not in value:
+            value["messages"] = []
+        return value
 
 
 class LeanREPLHandler:
@@ -159,16 +167,16 @@ class LeanREPLHandler:
                 del response["env"]
             else:
                 env = None
+            env = LeanREPLEnvironment(env_index=int(env)) if env is not None else None
+            # If we have top level proof states, we can simply return this
+            if self._is_next_proof_state(response):
+                return LeanREPLNextProofState.model_validate(response), env
             # If we have sorries, we can return proof states
             if self._has_sorries(response):
                 self._parse_sorries(response)
             if self._has_messages(response):
                 self._parse_messages(response)
-            if self._is_next_proof_state(response):
-                response = LeanREPLNextProofState.model_validate(response)
-            if env is not None:
-                return response, LeanREPLEnvironment(env_index=int(env))
-            return response, None
+            return response, env
         except json.JSONDecodeError:
             return None
 
