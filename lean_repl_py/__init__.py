@@ -6,6 +6,7 @@ from .handler import (
     LeanREPLMessage,
     LeanREPLNextProofState,
 )
+from .async_handler import LeanREPLAsyncHandler
 
 __all__ = [
     "LeanREPLHandler",
@@ -14,4 +15,5 @@ __all__ = [
     "LeanREPLNextProofState",
     "LeanREPLPos",
     "LeanREPLMessage",
+    "LeanREPLAsyncHandler",
 ]
