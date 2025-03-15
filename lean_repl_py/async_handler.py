@@ -141,8 +141,12 @@ class LeanREPLAsyncHandler:
             Optional[LeanREPLEnvironment],
         ]
     ]:
-        """Read a JSON object from the Lean REPL."""
-        output = await self._get_output()
+        """Read a JSON object from the Lean REPL.
+
+        :param timeout: The maximum time to wait for a response.
+        :return: A tuple containing the JSON object and the environment.
+        """
+        output = await self._get_output(timeout)
         try:
             response = json.loads(output)
             # Env is not send in tactic mode
